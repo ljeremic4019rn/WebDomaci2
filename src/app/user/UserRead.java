@@ -7,7 +7,7 @@ import java.net.Socket;
 
 public class UserRead implements Runnable{
     private UserMain userMain;
-    private Socket socket;
+    private final Socket socket;
 
     public UserRead(Socket socket, UserMain userMain){
         this.socket = socket;
@@ -21,7 +21,7 @@ public class UserRead implements Runnable{
             BufferedReader inSocket= new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String recievedMessage;
             while (true) {
-                recievedMessage = inSocket.readLine(); //kad se zatvori socket u ClientThreadSend, skace u Exception ispod. Koristan trik
+                recievedMessage = inSocket.readLine();
                 System.out.println(recievedMessage);
             }
         } catch (IOException e) {

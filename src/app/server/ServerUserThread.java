@@ -1,25 +1,18 @@
 package app.server;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 public class ServerUserThread implements Runnable {
 
     private final Socket socket;
     private final ServerMain serverMain;
-    private String username;
     PrintWriter outSocket;
     BufferedReader inSocket;
 
     String serverMessage = "";
     String clientMessage;
-
-
 
     public ServerUserThread(Socket socket, ServerMain serverMain) {
         super();
@@ -32,7 +25,7 @@ public class ServerUserThread implements Runnable {
         try {
             inSocket = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             outSocket = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
-            username = inSocket.readLine();
+            String username = inSocket.readLine();
 
             if (serverMain.getUserThreads().containsKey(username)){
                 System.err.println("existing user");
@@ -44,48 +37,43 @@ public class ServerUserThread implements Runnable {
             serverMain.getUserThreads().put(username,outSocket);
             serverMain.welcomeNewUser(username);
 
+            if (serverMain.getChatHistory().size() > 0){
+                outSocket.println("message backlog");
+                synchronized (ServerMain.HLOCK) {
+                    for (String msg : serverMain.getChatHistory()){
+                        outSocket.println(msg);
+                    }
+                }
+            }
 
             do {
-                clientMessage = inSocket.readLine();				//prima poruku od klijenta
-//                System.err.println(clientMessage);
-                serverMessage = "<" + username + ">  <" + LocalDateTime.now() + ">  :" + clientMessage;
-//                System.out.println(serverMessage);
+                clientMessage = inSocket.readLine();
+                serverMessage = "<" + username + "> <" + LocalDateTime.now() + ">: " + clientMessage;
                 serverMain.broadcast(serverMessage, username);
             }while (!clientMessage.equals("/leave"));
 
-            serverMain.removeUser(this);
-            socket.close();
+            serverMain.removeUser(username);
 
-            serverMessage = username + " has left.";
-            System.out.println(serverMessage);
-            serverMain.broadcast(serverMessage,username);
-
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            if (inSocket != null) {
+                try {
+                    inSocket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (outSocket != null) {
+                outSocket.close();
+            }
+            if (this.socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-    }
-
-    public void sendMessage(String message) {
-        outSocket.println(message);
-    }
-
-    public Socket getSocket() {
-        return socket;
-    }
-
-    public ServerMain getServerMain() {
-        return serverMain;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public PrintWriter getOutSocket() {
-        return outSocket;
-    }
-
-    public BufferedReader getInSocket() {
-        return inSocket;
     }
 }
