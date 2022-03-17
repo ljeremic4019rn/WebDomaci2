@@ -10,7 +10,13 @@ public class ServerMain {
     private final Map<String, PrintWriter> userThreads = new HashMap<>(); //username, outThread
     private final ArrayList<String> chatHistory = new ArrayList<>();
     public static final String HLOCK = "HistoryLock";
-    public static final ArrayList<String> wordBlackList = new ArrayList<>();
+    public static final ArrayList<String> wordBlacklist = new ArrayList<>(){
+        {
+            add("fuck");
+            add("bitch");
+            add("cunt");
+        }
+    };
 
 
     public ServerMain() throws IOException, InterruptedException {
@@ -38,6 +44,25 @@ public class ServerMain {
         }
     }
 
+    public String censure(String uncensored){
+        String []uc = uncensored.split(" ");
+        StringBuilder censured = new StringBuilder();
+        StringBuilder tmp = new StringBuilder();
+
+        for (String s: uc) {
+            if (wordBlacklist.contains(s)){
+                int wordLength = s.length();
+                tmp.append(s.charAt(0));
+                tmp.append("*".repeat(Math.max(0, wordLength - 2)));
+                tmp.append(s.charAt(wordLength - 1));
+                censured.append(" ").append(tmp);
+                tmp.setLength(0);
+            }
+            else censured.append(" ").append(s);
+        }
+        return censured.toString();
+    }
+
 
 
     public void broadcast(String message, String excludedUser) {
@@ -56,8 +81,6 @@ public class ServerMain {
             }
             else {
                 userThreads.get(username).println("Welcome " + newUsername + " enjoy chatting and be respectful");
-                chatHistory.add("Welcome " + newUsername + " enjoy chatting and be respectful");
-
             }
         }
     }

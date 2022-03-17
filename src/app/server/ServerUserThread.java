@@ -34,21 +34,19 @@ public class ServerUserThread implements Runnable {
             }
             else outSocket.println("welcome");
 
-            serverMain.getUserThreads().put(username,outSocket);
-            serverMain.welcomeNewUser(username);
-
-            if (serverMain.getChatHistory().size() > 0){
-                outSocket.println("message backlog");
-                synchronized (ServerMain.HLOCK) {
-                    for (String msg : serverMain.getChatHistory()){
-                        outSocket.println(msg);
-                    }
+            synchronized (ServerMain.HLOCK) {
+                for (String msg : serverMain.getChatHistory()){
+                    outSocket.println(msg);
                 }
             }
 
+            serverMain.getUserThreads().put(username,outSocket);
+            serverMain.welcomeNewUser(username);
+
             do {
                 clientMessage = inSocket.readLine();
-                serverMessage = "<" + username + "> <" + LocalDateTime.now() + ">: " + clientMessage;
+                serverMessage = "<" + username + "> <" + LocalDateTime.now() + ">: " + serverMain.censure(clientMessage);
+
                 serverMain.broadcast(serverMessage, username);
             }while (!clientMessage.equals("/leave"));
 

@@ -18,11 +18,12 @@ public class HistoryManager implements Runnable{
             if(serverMain.getChatHistory().size() > 100){
                 synchronized (ServerMain.HLOCK) {
                     serverMain.getChatHistory().remove(0);
+                    System.err.println("limit exceeded msg deleted");
                 }
             }
             try {
                 Thread.sleep(1000);//cisto da ne bi zatrpalo server konzolu sa printovima
-            } catch (InterruptedException e) {
+            } catch (InterruptedException e) {//ovo inace ne bi bilo ovde
                 e.printStackTrace();
             }
         }
